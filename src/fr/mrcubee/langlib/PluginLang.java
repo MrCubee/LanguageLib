@@ -1,6 +1,7 @@
 package fr.mrcubee.langlib;
 
 import java.io.*;
+import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
@@ -26,7 +27,7 @@ public class PluginLang {
 
     public Properties importInternal(Lang lang) {
         Logger logger;
-        InputStream inputStream;
+        InputStreamReader inputStream = null;
         Properties properties;
 
         if (lang == null)
@@ -35,7 +36,7 @@ public class PluginLang {
         if (logger == null)
             return null;
         logger.info("[LANG] Importing internal " + lang + " language configuration....");
-        inputStream = getClass().getResourceAsStream("/lang/" + lang + ".lang");
+        inputStream = new InputStreamReader(getClass().getResourceAsStream("/lang/" + lang + ".lang"), StandardCharsets.UTF_8);
         if (inputStream == null) {
             logger.warning("[LANG] No internal " + lang+ " language configuration.");
             return null;
@@ -54,7 +55,7 @@ public class PluginLang {
         LangMessage langMessage;
         Properties properties;
         File langFile;
-        FileInputStream fileInputStream = null;
+        InputStreamReader fileInputStream = null;
 
         if (lang == null)
             return null;
@@ -74,7 +75,7 @@ public class PluginLang {
         }
         pluginLogger.info("[LANG] Importing external " + lang + " language configuration....");
         try {
-            fileInputStream = new FileInputStream(langFile);
+            fileInputStream = new InputStreamReader(new FileInputStream(langFile), StandardCharsets.UTF_8);
         } catch (FileNotFoundException ignored) {}
         if (fileInputStream == null) {
             pluginLogger.severe("[LANG] " + langFile.getPath() + " can't open.");
