@@ -1,7 +1,5 @@
 package fr.mrcubee.langlib;
 
-import org.apache.commons.io.FileUtils;
-
 import java.io.*;
 import java.util.HashMap;
 import java.util.Map;
