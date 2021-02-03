@@ -72,36 +72,6 @@ public enum Lang {
         return rescueMessage(message, rescueMessage, color, objects);
     }
 
-    public boolean saveDefault() {
-        Logger logger = getPluginLogger();
-        File dataFolder = getPluginDataFolder();
-        File langFile;
-        InputStream inputStream;
-
-        if (logger == null || dataFolder == null)
-            return false;
-        logger.info("[LANG] Exporting default config for " + toString() + " language...");
-        langFile = new File(dataFolder, "lang/" + toString() + ".lang");
-        if (langFile.exists()) {
-            logger.warning("[LANG] File " + langFile.getAbsolutePath() + " already exists.");
-            return false;
-        }
-        inputStream = getClass().getResourceAsStream("/lang/" + toString() + ".lang");
-        if (inputStream == null) {
-            logger.warning("[LANG] No configuration file found for the " + toString() + " language.");
-            return false;
-        }
-        logger.warning("[LANG] Copy configuration file for " + toString() + " language...");
-        try {
-            FileUtils.copyInputStreamToFile(inputStream, langFile);
-        } catch (IOException exception) {
-            logger.warning("[LANG] Error during copy configuration file for " + toString() + " language. Exception: " + exception.getMessage());
-            return false;
-        }
-        logger.warning("[LANG] Configuration file copied for " + toString() + " language.");
-        return true;
-    }
-
     public static boolean setDefaultLang(Lang lang) {
         PluginLang pluginLang;
         Object plugin;

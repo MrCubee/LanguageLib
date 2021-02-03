@@ -34,4 +34,8 @@ public class LangMessage {
     public Lang getLang() {
         return this.lang;
     }
+
+    public int size() {
+        return this.messages.size();
+    }
 }
