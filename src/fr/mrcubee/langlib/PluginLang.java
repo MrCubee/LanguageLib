@@ -31,13 +31,17 @@ public class PluginLang {
         File langFile;
         FileInputStream fileInputStream = null;
 
-        if (lang == null || lang.equals(Lang.DEFAULT))
+        if (lang == null)
             return null;
         pluginLogger.info("[LANG] Loading " + lang + " file...");
         langFile = new File(this.langFolder, lang + ".lang");
         if (!langFile.exists()) {
             pluginLogger.severe("[LANG] " + langFile.getAbsolutePath() + " doesn't exit.");
-            return null;
+            lang.saveDefault();
+            if (!langFile.exists()) {
+                pluginLogger.severe("[LANG] " + langFile.getAbsolutePath() + " doesn't exit.");
+                return null;
+            }
         }
         try {
             fileInputStream = new FileInputStream(langFile);
@@ -77,6 +81,7 @@ public class PluginLang {
                 return null;
             this.langMessage.put(lang, langMessage);
             this.langMessageLastRead.put(langMessage, System.currentTimeMillis());
+            pluginLogger.info("[LANG] " + lang + " file loaded.");
         }
         message = langMessage.getMessage(messageId);
         if (message == null) {
@@ -98,7 +103,7 @@ public class PluginLang {
     public void clean(int seconds) {
         long currentTime = System.currentTimeMillis();
 
-        this.langMessageLastRead.keySet().removeIf(value -> {
+        this.langMessage.values().removeIf(value -> {
             Long lastRead = this.langMessageLastRead.get(value);
 
             if (lastRead == null || (currentTime - lastRead) / 1000 >= seconds) {
