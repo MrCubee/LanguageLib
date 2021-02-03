@@ -1,8 +1,12 @@
 package fr.mrcubee.langlib;
 
+import net.md_5.bungee.api.ChatColor;
+import org.apache.commons.io.FileUtils;
 import org.bukkit.entity.Player;
 
 import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.Map;
 import java.util.WeakHashMap;
 import java.util.logging.Logger;
@@ -13,7 +17,6 @@ import static fr.mrcubee.util.plugin.PluginType.getPluginDataFolder;
 
 public enum Lang {
 
-    DEFAULT(null),
     EN_US("EN_us"),
     FR_FR("FR_fr");
 
@@ -31,15 +34,20 @@ public enum Lang {
         return this.langCode;
     }
 
-    private String rescueMessage(String original, String rescueMessage, Object... objects) {
-        if (original != null)
+    private String rescueMessage(String original, String rescueMessage, boolean color, Object... objects) {
+        if (original != null) {
+            if (color)
+                original = ChatColor.translateAlternateColorCodes('&', original);
             return String.format(original, objects);
-        else if (rescueMessage != null)
+        } else if (rescueMessage != null) {
+            if (color)
+                rescueMessage = ChatColor.translateAlternateColorCodes('&', rescueMessage);
             return String.format(rescueMessage, objects);
+        }
         return null;
     }
 
-    public String getMessageFromId(String messageId, String rescueMessage, Object... objects) {
+    public String getMessageFromId(String messageId, String rescueMessage, boolean color, Object... objects) {
         Object plugin;
         PluginLang pluginLang;
         Logger logger;
@@ -47,21 +55,51 @@ public enum Lang {
         String message;
 
         if (messageId == null)
-            return rescueMessage(null, rescueMessage, objects);;
+            return rescueMessage(null, rescueMessage, color, objects);;
         plugin = getPlugin();
         if (plugin == null)
-            return rescueMessage(null, rescueMessage, objects);
+            return rescueMessage(null, rescueMessage, color, objects);
         pluginLang = PLUGIN_LANG.get(plugin);
         if (pluginLang == null) {
             logger = getPluginLogger();
             dataFolder = getPluginDataFolder();
             if (logger == null || dataFolder == null)
-                return rescueMessage(null, rescueMessage, objects);
+                return rescueMessage(null, rescueMessage, color, objects);
             pluginLang = new PluginLang(new File(dataFolder, "lang/"), logger);
             PLUGIN_LANG.put(plugin, pluginLang);
         }
         message = pluginLang.getMessageFromId(this, messageId);
-        return rescueMessage(message, rescueMessage, objects);
+        return rescueMessage(message, rescueMessage, color, objects);
+    }
+
+    public boolean saveDefault() {
+        Logger logger = getPluginLogger();
+        File dataFolder = getPluginDataFolder();
+        File langFile;
+        InputStream inputStream;
+
+        if (logger == null || dataFolder == null)
+            return false;
+        logger.info("[LANG] Exporting default config for " + toString() + " language...");
+        langFile = new File(dataFolder, "lang/" + toString() + ".lang");
+        if (langFile.exists()) {
+            logger.warning("[LANG] File " + langFile.getAbsolutePath() + " already exists.");
+            return false;
+        }
+        inputStream = getClass().getResourceAsStream("/lang/" + toString() + ".lang");
+        if (inputStream == null) {
+            logger.warning("[LANG] No configuration file found for the " + toString() + " language.");
+            return false;
+        }
+        logger.warning("[LANG] Copy configuration file for " + toString() + " language...");
+        try {
+            FileUtils.copyInputStreamToFile(inputStream, langFile);
+        } catch (IOException exception) {
+            logger.warning("[LANG] Error during copy configuration file for " + toString() + " language. Exception: " + exception.getMessage());
+            return false;
+        }
+        logger.warning("[LANG] Configuration file copied for " + toString() + " language.");
+        return true;
     }
 
     public static boolean setDefaultLang(Lang lang) {
@@ -119,8 +157,7 @@ public enum Lang {
         if (lang == null || (defaultLang != null && defaultLang.equals(lang))) {
             PLAYER_LANG.remove(player);
             return;
-        } else if (lang.equals(Lang.DEFAULT))
-            return;
+        }
         PLAYER_LANG.put(player, lang);
     }
 
@@ -130,33 +167,37 @@ public enum Lang {
         if (player == null)
             return null;
         lang = PLAYER_LANG.get(player);
-        if (lang != null) {
-            if (lang.equals(Lang.DEFAULT)) {
-                PLAYER_LANG.remove(player);
-                return getDefaultLang();
-            }
+        if (lang != null)
             return lang;
-        }
         return getDefaultLang();
     }
 
-    public static String getMessage(Player player, String messageId, String rescueMessage, Object... objects) {
+    public static String getMessage(Player player, String messageId, String rescueMessage, boolean color, Object... objects) {
         Lang lang = getPlayerLang(player);
 
         if (lang == null)
             return rescueMessage;
-        return lang.getMessageFromId(messageId, rescueMessage, objects);
+        return lang.getMessageFromId(messageId, rescueMessage, color, objects);
     }
 
-    public static String getMessage(String messageId, String rescueMessage, Object... objects) {
+    public static String getMessage(String messageId, String rescueMessage, boolean color, Object... objects) {
         Lang lang = getDefaultLang();
 
         if (lang == null)
             return rescueMessage;
-        return lang.getMessageFromId(messageId, rescueMessage, objects);
+        return lang.getMessageFromId(messageId, rescueMessage, color, objects);
     }
 
     public static void clean(int seconds) {
         PLUGIN_LANG.values().forEach(pluginLang -> pluginLang.clean(seconds));
+    }
+
+    public static Lang getFromName(String name) {
+        if (name == null)
+            return null;
+        for (Lang lang : Lang.values())
+            if (lang.toString().equalsIgnoreCase(name))
+                return lang;
+        return null;
     }
 }
