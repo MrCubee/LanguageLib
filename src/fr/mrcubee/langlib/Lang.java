@@ -1,27 +1,28 @@
 package fr.mrcubee.langlib;
 
+import fr.mrcubee.langlib.util.PluginFinder;
 import net.md_5.bungee.api.ChatColor;
-import org.apache.commons.io.FileUtils;
 import org.bukkit.entity.Player;
 
 import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
 import java.util.Map;
 import java.util.WeakHashMap;
 import java.util.logging.Logger;
 
-import static fr.mrcubee.util.plugin.PluginType.getPlugin;
-import static fr.mrcubee.util.plugin.PluginType.getPluginLogger;
-import static fr.mrcubee.util.plugin.PluginType.getPluginDataFolder;
-
 public enum Lang {
 
     EN_US("EN_us"),
+    ZH_zh("ZH_zh"),
+    //HI_hi("HI_hi"),
+    //ES_es("ES_es"),
+    //AR_ar("AR_ar"),
     FR_FR("FR_fr");
+    //RU_ru("RU_ru"),
+    //PT_pt("PT_pt"),
+    //ID_id("ID_id");
 
     private final static Map<Object, PluginLang> PLUGIN_LANG = new WeakHashMap<Object, PluginLang>();
-    private final static Map<Player, Lang> PLAYER_LANG = new WeakHashMap<Player, Lang>();
+    private final static Map<Object, Lang> PLAYER_LANG = new WeakHashMap<Object, Lang>();
 
     private final String langCode;
 
@@ -47,29 +48,26 @@ public enum Lang {
         return null;
     }
 
-    public String getMessageFromId(String messageId, String rescueMessage, boolean color, Object... objects) {
-        Object plugin;
+    private String getMessageFromId(Object plugin, Logger logger, File dataFolder, String messageId, String rescueMessage, boolean color, Object... objects) {
         PluginLang pluginLang;
-        Logger logger;
-        File dataFolder;
         String message;
 
-        if (messageId == null)
-            return rescueMessage(null, rescueMessage, color, objects);;
-        plugin = getPlugin();
-        if (plugin == null)
+        if (plugin == null || logger == null || dataFolder == null || messageId == null)
             return rescueMessage(null, rescueMessage, color, objects);
         pluginLang = PLUGIN_LANG.get(plugin);
         if (pluginLang == null) {
-            logger = getPluginLogger();
-            dataFolder = getPluginDataFolder();
-            if (logger == null || dataFolder == null)
-                return rescueMessage(null, rescueMessage, color, objects);
-            pluginLang = new PluginLang(new File(dataFolder, "lang/"), logger);
+            pluginLang = new PluginLang(plugin, new File(dataFolder, "lang/"), logger);
             PLUGIN_LANG.put(plugin, pluginLang);
         }
         message = pluginLang.getMessageFromId(this, messageId);
         return rescueMessage(message, rescueMessage, color, objects);
+    }
+
+    public String getMessageFromId(String messageId, String rescueMessage, boolean color, Object... objects) {
+        Object plugin = PluginFinder.INSTANCE.findPlugin();
+
+        return getMessageFromId(plugin, PluginFinder.INSTANCE.findLogger(plugin),
+                PluginFinder.INSTANCE.findDataFolder(plugin), messageId, rescueMessage, color, objects);
     }
 
     public static boolean setDefaultLang(Lang lang) {
@@ -80,17 +78,17 @@ public enum Lang {
 
         if (lang == null)
             return false;
-        plugin = getPlugin();
-        logger = getPluginLogger();
-        if (plugin == null || logger == null)
+        plugin = PluginFinder.INSTANCE.findPlugin();
+        logger = PluginFinder.INSTANCE.findLogger(plugin);
+        if (logger == null)
             return false;
         pluginLang = PLUGIN_LANG.get(plugin);
         if (pluginLang == null) {
-            dataFolder = getPluginDataFolder();
+            dataFolder = PluginFinder.INSTANCE.findDataFolder(plugin);
             if (dataFolder == null)
                 return false;
             logger.info("[LANG] load language system...");
-            pluginLang = new PluginLang(new File(dataFolder, "lang/"), logger);
+            pluginLang = new PluginLang(plugin, new File(dataFolder, "lang/"), logger);
             PLUGIN_LANG.put(plugin, pluginLang);
             logger.info("[LANG] language system loaded.");
         }
@@ -100,7 +98,7 @@ public enum Lang {
     }
 
     public static Lang getDefaultLang() {
-        Object plugin = getPlugin();
+        Object plugin = PluginFinder.INSTANCE.findPlugin();
         PluginLang pluginLang;
 
         if (plugin == null)
@@ -111,14 +109,14 @@ public enum Lang {
         return pluginLang.getDefaultLang();
     }
     public static void removeInstance() {
-        Object plugin = getPlugin();
+        Object plugin = PluginFinder.INSTANCE.findPlugin();
 
         if (plugin == null)
             return;
         PLUGIN_LANG.remove(plugin);
     }
 
-    public static void setPlayerLang(Player player, Lang lang) {
+    public static void setPlayerLang(Object player, Lang lang) {
         Lang defaultLang;
 
         if (player == null)
@@ -131,31 +129,36 @@ public enum Lang {
         PLAYER_LANG.put(player, lang);
     }
 
-    public static Lang getPlayerLang(Player player) {
-        Lang lang;
-
+    public static Lang getPlayerLang(Object player) {
         if (player == null)
             return null;
-        lang = PLAYER_LANG.get(player);
-        if (lang != null)
-            return lang;
-        return getDefaultLang();
+        return PLAYER_LANG.get(player);
     }
 
     public static String getMessage(Player player, String messageId, String rescueMessage, boolean color, Object... objects) {
         Lang lang = getPlayerLang(player);
+        Object plugin = PluginFinder.INSTANCE.findPlugin();
+        PluginLang pluginLang;
 
+        if (lang == null && plugin != null && (pluginLang = PLUGIN_LANG.get(plugin)) != null)
+            lang = pluginLang.getDefaultLang();
         if (lang == null)
-            return rescueMessage;
-        return lang.getMessageFromId(messageId, rescueMessage, color, objects);
+            return String.format(rescueMessage, objects);
+        return lang.getMessageFromId(plugin, PluginFinder.INSTANCE.findLogger(plugin),
+                PluginFinder.INSTANCE.findDataFolder(plugin), messageId, rescueMessage, color, objects);
     }
 
     public static String getMessage(String messageId, String rescueMessage, boolean color, Object... objects) {
-        Lang lang = getDefaultLang();
+        Object plugin = PluginFinder.INSTANCE.findPlugin();
+        PluginLang pluginLang;
+        Lang lang = null;
 
+        if (plugin != null && (pluginLang = PLUGIN_LANG.get(plugin)) != null)
+            lang = pluginLang.getDefaultLang();
         if (lang == null)
-            return rescueMessage;
-        return lang.getMessageFromId(messageId, rescueMessage, color, objects);
+            return String.format(rescueMessage, objects);
+        return lang.getMessageFromId(plugin, PluginFinder.INSTANCE.findLogger(plugin),
+                PluginFinder.INSTANCE.findDataFolder(plugin), messageId, rescueMessage, color, objects);
     }
 
     public static void clean(int seconds) {

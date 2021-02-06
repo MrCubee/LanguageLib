@@ -1,5 +1,7 @@
 package fr.mrcubee.langlib;
 
+import fr.mrcubee.langlib.util.PluginFinder;
+
 import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
@@ -8,44 +10,75 @@ import java.util.Properties;
 import java.util.WeakHashMap;
 import java.util.logging.Logger;
 
-import static fr.mrcubee.util.plugin.PluginType.getPluginLogger;
-
 public class PluginLang {
 
+    private final Object plugin;
     private final Logger pluginLogger;
     private final File langFolder;
     private final Map<Lang, LangMessage> langMessage;
     private final Map<LangMessage, Long> langMessageLastRead;
     private Lang defaultLang;
 
-    protected PluginLang(File langFolder, Logger pluginLogger) {
+    protected PluginLang(Object plugin, File langFolder, Logger pluginLogger) {
+        this.plugin = plugin;
         this.pluginLogger = pluginLogger;
         this.langFolder = langFolder;
         this.langMessage = new HashMap<Lang, LangMessage>();
         this.langMessageLastRead = new WeakHashMap<LangMessage, Long>();
     }
 
-    public Properties importInternal(Lang lang) {
-        Logger logger;
-        InputStreamReader inputStream = null;
+    public Properties loadInternal(Lang lang) {
+        InputStream inputStream;
+        InputStreamReader inputStreamReader;
         Properties properties;
 
         if (lang == null)
             return null;
-        logger = getPluginLogger();
-        if (logger == null)
-            return null;
-        logger.info("[LANG] Importing internal " + lang + " language configuration....");
-        inputStream = new InputStreamReader(getClass().getResourceAsStream("/lang/" + lang + ".lang"), StandardCharsets.UTF_8);
+        this.pluginLogger.info("[LANG] Importing internal " + lang + " language configuration....");
+        inputStream = this.plugin.getClass().getResourceAsStream("/lang/" + lang + ".lang");
         if (inputStream == null) {
-            logger.warning("[LANG] No internal " + lang+ " language configuration.");
+            this.pluginLogger.warning("[LANG] No internal " + lang+ " language configuration.");
+            return null;
+        }
+        inputStreamReader = new InputStreamReader(inputStream, StandardCharsets.UTF_8);
+        properties = new Properties();
+        try {
+            properties.load(inputStreamReader);
+        } catch (IOException exception) {
+            this.pluginLogger.severe("[LANG] Error during import internal " + lang + " language configuration. Exception: " + exception.getMessage());
+            return null;
+        }
+        return properties;
+    }
+
+    public Properties loadExternal(Lang lang) {
+        InputStreamReader inputStreamReader = null;
+        File langFile;
+        Properties properties;
+
+        if (lang == null)
+            return null;
+        langFile = new File(this.langFolder, lang + ".lang");
+        if (!langFile.exists()) {
+            pluginLogger.severe("[LANG] External " + lang+ " language configuration doesn't exit.");
+            return null;
+        }
+        try {
+            inputStreamReader = new InputStreamReader(new FileInputStream(langFile), StandardCharsets.UTF_8);
+        } catch (FileNotFoundException ignored) {}
+        if (inputStreamReader == null) {
+            pluginLogger.severe("[LANG] " + langFile.getPath() + " can't open.");
             return null;
         }
         properties = new Properties();
         try {
-            properties.load(inputStream);
-        } catch (IOException exception) {
-            logger.severe("[LANG] Error during import internal " + lang + " language configuration. Exception: " + exception.getMessage());
+            properties.load(inputStreamReader);
+        } catch (IOException ignored) {}
+        try {
+            inputStreamReader.close();
+        } catch (IOException ignored) {}
+        if (properties.size() < 1) {
+            pluginLogger.warning("[LANG] External " + langFile.getPath() + " language configuration file is empty.");
             return null;
         }
         return properties;
@@ -54,13 +87,11 @@ public class PluginLang {
     public LangMessage loadLangFile(Lang lang) {
         LangMessage langMessage;
         Properties properties;
-        File langFile;
-        InputStreamReader fileInputStream = null;
 
         if (lang == null)
             return null;
-        pluginLogger.info("[LANG] Loading " + lang + " language...");
-        properties = importInternal(lang);
+        this.pluginLogger.info("[LANG] Loading " + lang + " language...");
+        properties = loadInternal(lang);
         langMessage = new LangMessage(lang);
         if (properties != null) {
             properties.forEach((messageId, message) -> {
@@ -68,32 +99,15 @@ public class PluginLang {
             });
             properties.clear();
         }
-        langFile = new File(this.langFolder, lang + ".lang");
-        if (!langFile.exists()) {
-            pluginLogger.severe("[LANG] External " + lang+ " language configuration doesn't exit.");
-            return langMessage;
+        properties = loadExternal(lang);
+        if (properties != null) {
+            properties.forEach((messageId, message) -> {
+                langMessage.registerMessage(messageId.toString(), message.toString());
+            });
+            properties.clear();
         }
-        pluginLogger.info("[LANG] Importing external " + lang + " language configuration....");
-        try {
-            fileInputStream = new InputStreamReader(new FileInputStream(langFile), StandardCharsets.UTF_8);
-        } catch (FileNotFoundException ignored) {}
-        if (fileInputStream == null) {
-            pluginLogger.severe("[LANG] " + langFile.getPath() + " can't open.");
-            return langMessage;
-        }
-        if (properties == null)
-            properties = new Properties();
-        try {
-            properties.load(fileInputStream);
-        } catch (IOException ignored) {}
-        if (properties.size() < 1)
-            pluginLogger.warning("[LANG] External " + langFile.getPath() + " language configuration file is empty.");
-        properties.forEach((messageId, message) -> {
-            langMessage.registerMessage(messageId.toString(), message.toString());
-        });
-        try {
-            fileInputStream.close();
-        } catch (IOException ignored) {}
+        if (langMessage.size() < 1)
+            return null;
         return langMessage;
     }
 
@@ -106,8 +120,11 @@ public class PluginLang {
         langMessage = this.langMessage.get(lang);
         if (langMessage == null) {
             langMessage = loadLangFile(lang);
-            if (langMessage == null || langMessage.size() < 1)
+            if (langMessage == null) {
+                if (this.defaultLang != null && !this.defaultLang.equals(lang))
+                    return getMessageFromId(this.defaultLang, messageId);
                 return null;
+            }
             this.langMessage.put(lang, langMessage);
             this.langMessageLastRead.put(langMessage, System.currentTimeMillis());
             pluginLogger.info("[LANG] " + lang + " file loaded.");
