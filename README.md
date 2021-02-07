@@ -74,6 +74,7 @@ player.getName()
 String message = Lang.getMessage(player, "display.player.name", "&2Your name is: %s", true, player.getName());
 ```
 Parameters:
+
 player
 > The player whose language you want to use is configured on him. If no language is set, it will use the default language. If no default language is set, it will use the fallback format message ("&2Your name is: %s").
 
@@ -90,6 +91,20 @@ true
 player.getName()
 > Is an element required by the message format. the **%s** will be replaced by the player's username.
 > you can see the different parameters available in the message format [here](https://www.javatpoint.com/java-string-format)
+#### Define a language for a player.
+
+```java
+Lang.setPlayerLang(player, "FR_fr");
+```
+Parameters:
+
+player
+> Player on which you want to apply the language.
+
+"FR_fr"
+>Language you want to apply.
+>**Please respect the minecraft language filename format.**
+
 ### Create the language files.
 The language files are located in a lang folder at the root of the plugin jar file and / or in a lang folder in the plugin folder. The file extension is .lang
 The external language file takes precedence over the internal language file.
