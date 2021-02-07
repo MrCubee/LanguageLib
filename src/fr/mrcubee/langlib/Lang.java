@@ -9,33 +9,26 @@ import java.util.Map;
 import java.util.WeakHashMap;
 import java.util.logging.Logger;
 
-public enum Lang {
-
-    EN_US("EN_us"),
-    ZH_zh("ZH_zh"),
-    //HI_hi("HI_hi"),
-    //ES_es("ES_es"),
-    //AR_ar("AR_ar"),
-    FR_FR("FR_fr");
-    //RU_ru("RU_ru"),
-    //PT_pt("PT_pt"),
-    //ID_id("ID_id");
+/** This class is the main one of the library and this class manages languages between plugins and players.
+ * @author MrCubee
+ * @version 1.0
+ * @since 1.0
+ */
+public class Lang {
 
     private final static Map<Object, PluginLang> PLUGIN_LANG = new WeakHashMap<Object, PluginLang>();
-    private final static Map<Object, Lang> PLAYER_LANG = new WeakHashMap<Object, Lang>();
+    private final static Map<Object, String> PLAYER_LANG = new WeakHashMap<Object, String>();
 
-    private final String langCode;
-
-    Lang(String langCode) {
-        this.langCode = langCode;
-    }
-
-    @Override
-    public String toString() {
-        return this.langCode;
-    }
-
-    private String rescueMessage(String original, String rescueMessage, boolean color, Object... objects) {
+    /** This function returns the message formatted with the colors applied
+     * @since 1.0
+     * @param original The message format returned by the language dictionary.
+     * @param rescueMessage message format used if no dictionary contains the unique message identifier.
+     * @param color Applies the color format from '&' character.
+     * @param objects The elements required by the message format.
+     * @return The formatted message.
+     * @see String#format(String, Object...)
+     */
+    private static String rescueMessage(String original, String rescueMessage, boolean color, Object... objects) {
         if (original != null) {
             if (color)
                 original = ChatColor.translateAlternateColorCodes('&', original);
@@ -48,38 +41,51 @@ public enum Lang {
         return null;
     }
 
-    private String getMessageFromId(Object plugin, Logger logger, File dataFolder, String messageId, String rescueMessage, boolean color, Object... objects) {
+    /** Retrieves the formatted message from the plugin and the specified language.
+     * @since 1.0
+     * @param plugin The plugin from which to take the configuration.
+     * @param lang The targeted language (see minecraft <a href="https://minecraft.gamepedia.com/Language">Locale Code</a>).
+     * @param messageId The unique identifier of the message to use to find the message format in the dictionary.
+     * @param rescueMessage Message format used if no dictionary contains the unique message identifier.
+     * @param color Applies the color format from '&' character.
+     * @param objects The elements required by the message format.
+     * @return The formatted message.
+     * @see String#format(String, Object...)
+     */
+    private static String getMessageFromId(Object plugin, String lang, String messageId, String rescueMessage, boolean color, Object... objects) {
+        Logger logger;
+        File dataFolder;
         PluginLang pluginLang;
         String message;
 
-        if (plugin == null || logger == null || dataFolder == null || messageId == null)
+        if (plugin == null || messageId == null)
+            return rescueMessage(null, rescueMessage, color, objects);
+        logger = PluginFinder.INSTANCE.findLogger(plugin);
+        dataFolder = PluginFinder.INSTANCE.findDataFolder(plugin);
+        if (logger == null || dataFolder == null)
             return rescueMessage(null, rescueMessage, color, objects);
         pluginLang = PLUGIN_LANG.get(plugin);
         if (pluginLang == null) {
             pluginLang = new PluginLang(plugin, new File(dataFolder, "lang/"), logger);
             PLUGIN_LANG.put(plugin, pluginLang);
         }
-        message = pluginLang.getMessageFromId(this, messageId);
+        message = pluginLang.getMessageFromId(lang, messageId);
+        if (message == null && pluginLang.getDefaultLang() != null)
+            message = pluginLang.getMessageFromId(pluginLang.getDefaultLang(), messageId);
         return rescueMessage(message, rescueMessage, color, objects);
     }
 
-    public String getMessageFromId(String messageId, String rescueMessage, boolean color, Object... objects) {
+    /** Set the default language to be used by the current plugin if it is not specified.
+     * @since 1.0
+     * @param lang The desired language (see minecraft <a href="https://minecraft.gamepedia.com/Language">Locale Code</a>).
+     * @return Returns true if the default language has been applied to the current plugin, or then returns false.
+     */
+    public static boolean setDefaultLang(String lang) {
         Object plugin = PluginFinder.INSTANCE.findPlugin();
-
-        return getMessageFromId(plugin, PluginFinder.INSTANCE.findLogger(plugin),
-                PluginFinder.INSTANCE.findDataFolder(plugin), messageId, rescueMessage, color, objects);
-    }
-
-    public static boolean setDefaultLang(Lang lang) {
+        Logger logger = PluginFinder.INSTANCE.findLogger(plugin);
         PluginLang pluginLang;
-        Object plugin;
-        Logger logger;
         File dataFolder;
 
-        if (lang == null)
-            return false;
-        plugin = PluginFinder.INSTANCE.findPlugin();
-        logger = PluginFinder.INSTANCE.findLogger(plugin);
         if (logger == null)
             return false;
         pluginLang = PLUGIN_LANG.get(plugin);
@@ -97,7 +103,11 @@ public enum Lang {
         return true;
     }
 
-    public static Lang getDefaultLang() {
+    /** Get the default language used by the current plugin if it is not specified.
+     * @since 1.0
+     * @return The default language of the current plugin (see minecraft <a href="https://minecraft.gamepedia.com/Language">Locale Code</a>).
+     */
+    public static String getDefaultLang() {
         Object plugin = PluginFinder.INSTANCE.findPlugin();
         PluginLang pluginLang;
 
@@ -108,6 +118,7 @@ public enum Lang {
             return null;
         return pluginLang.getDefaultLang();
     }
+
     public static void removeInstance() {
         Object plugin = PluginFinder.INSTANCE.findPlugin();
 
@@ -116,61 +127,64 @@ public enum Lang {
         PLUGIN_LANG.remove(plugin);
     }
 
-    public static void setPlayerLang(Object player, Lang lang) {
-        Lang defaultLang;
-
+    /** Define a specific language for a player
+     * @since 1.0
+     * @param player The targeted player.
+     * @param lang The desired language (see minecraft <a href="https://minecraft.gamepedia.com/Language">Locale Code</a>).
+     */
+    public static void setPlayerLang(Object player, String lang) {
         if (player == null)
             return;
-        defaultLang = getDefaultLang();
-        if (lang == null || (defaultLang != null && defaultLang.equals(lang))) {
+        if (lang == null) {
             PLAYER_LANG.remove(player);
             return;
         }
         PLAYER_LANG.put(player, lang);
     }
 
-    public static Lang getPlayerLang(Object player) {
+    /** Retrieves the language defined for the targeted player.
+     * @since 1.0
+     * @param player The targeted player.
+     * @return The language defined for the targeted player (see minecraft <a href="https://minecraft.gamepedia.com/Language">Locale Code</a>).
+     */
+    public static String getPlayerLang(Object player) {
         if (player == null)
             return null;
         return PLAYER_LANG.get(player);
     }
 
+    /** Retrieves the formatted message of the current plugin and the player language.
+     * @since 1.0
+     * @param player The player language to retrieve.
+     * @param messageId The unique identifier of the message to use to find the message format in the dictionary.
+     * @param rescueMessage Message format used if no dictionary contains the unique message identifier.
+     * @param color Applies the color format from '&' character.
+     * @param objects The elements required by the message format.
+     * @return The formatted message.
+     * @see String#format(String, Object...)
+     */
     public static String getMessage(Player player, String messageId, String rescueMessage, boolean color, Object... objects) {
-        Lang lang = getPlayerLang(player);
-        Object plugin = PluginFinder.INSTANCE.findPlugin();
-        PluginLang pluginLang;
-
-        if (lang == null && plugin != null && (pluginLang = PLUGIN_LANG.get(plugin)) != null)
-            lang = pluginLang.getDefaultLang();
-        if (lang == null)
-            return String.format(rescueMessage, objects);
-        return lang.getMessageFromId(plugin, PluginFinder.INSTANCE.findLogger(plugin),
-                PluginFinder.INSTANCE.findDataFolder(plugin), messageId, rescueMessage, color, objects);
+        return getMessageFromId(PluginFinder.INSTANCE.findPlugin(), getPlayerLang(player), messageId, rescueMessage, color, objects);
     }
 
+    /** Retrieves the formatted message of the current plugin and the default language.
+     * @since 1.0
+     * @param messageId The unique identifier of the message to use to find the message format in the dictionary.
+     * @param rescueMessage Message format used if no dictionary contains the unique message identifier.
+     * @param color Applies the color format from '&' character.
+     * @param objects The elements required by the message format.
+     * @return The formatted message.
+     * @see String#format(String, Object...) 
+     */
     public static String getMessage(String messageId, String rescueMessage, boolean color, Object... objects) {
-        Object plugin = PluginFinder.INSTANCE.findPlugin();
-        PluginLang pluginLang;
-        Lang lang = null;
-
-        if (plugin != null && (pluginLang = PLUGIN_LANG.get(plugin)) != null)
-            lang = pluginLang.getDefaultLang();
-        if (lang == null)
-            return String.format(rescueMessage, objects);
-        return lang.getMessageFromId(plugin, PluginFinder.INSTANCE.findLogger(plugin),
-                PluginFinder.INSTANCE.findDataFolder(plugin), messageId, rescueMessage, color, objects);
+        return getMessageFromId(PluginFinder.INSTANCE.findPlugin(), null, messageId, rescueMessage, color, objects);
     }
 
+    /** This function unloads languages loaded by plugins that are no longer used.
+     * @since 1.0
+     * @param seconds Time (in seconds) of inactivity before deleting the language.
+     */
     public static void clean(int seconds) {
         PLUGIN_LANG.values().forEach(pluginLang -> pluginLang.clean(seconds));
-    }
-
-    public static Lang getFromName(String name) {
-        if (name == null)
-            return null;
-        for (Lang lang : Lang.values())
-            if (lang.toString().equalsIgnoreCase(name))
-                return lang;
-        return null;
     }
 }

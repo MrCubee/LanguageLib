@@ -4,9 +4,13 @@ import net.md_5.bungee.BungeeCord;
 import net.md_5.bungee.api.plugin.Plugin;
 
 import java.io.File;
-import java.io.InputStream;
 import java.util.logging.Logger;
 
+/** This class retrieves which Bungeecord plugin calls the function.
+ * @author MrCubee
+ * @version 1.0
+ * @since 1.0
+ */
 public class PluginFinder extends fr.mrcubee.langlib.util.PluginFinder {
 
     @Override

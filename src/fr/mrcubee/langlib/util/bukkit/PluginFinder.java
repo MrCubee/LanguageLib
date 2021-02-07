@@ -2,12 +2,15 @@ package fr.mrcubee.langlib.util.bukkit;
 
 import org.bukkit.Bukkit;
 import org.bukkit.plugin.Plugin;
-import org.bukkit.plugin.java.JavaPlugin;
 
 import java.io.File;
-import java.io.InputStream;
 import java.util.logging.Logger;
 
+/** This class retrieves which Spigot plugin calls the function.
+ * @author MrCubee
+ * @version 1.0
+ * @since 1.0
+ */
 public class PluginFinder extends fr.mrcubee.langlib.util.PluginFinder {
 
     @Override
