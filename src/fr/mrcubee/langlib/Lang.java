@@ -163,7 +163,7 @@ public class Lang {
      * @return The formatted message.
      * @see String#format(String, Object...)
      */
-    public static String getMessage(Player player, String messageId, String rescueMessage, boolean color, Object... objects) {
+    public static String getMessage(Object player, String messageId, String rescueMessage, boolean color, Object... objects) {
         return getMessageFromId(PluginFinder.INSTANCE.findPlugin(), getPlayerLang(player), messageId, rescueMessage, color, objects);
     }
 
