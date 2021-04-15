@@ -27,7 +27,7 @@ Dependency:
   </dependency>
  </dependencies>
 ```
-#### Gradle
+#### Gradle:
 Repository:
 ```groovy
 repositories {
