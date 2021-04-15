@@ -60,6 +60,12 @@
             <version>1.16-R0.4-SNAPSHOT</version>
             <scope>provided</scope>
         </dependency>
+        <dependency>
+            <groupId>fr.mrcubee.minecraft.library</groupId>
+            <artifactId>plugin-finder</artifactId>
+            <version>1.0</version>
+            <scope>compile</scope>
+        </dependency>
     </dependencies>
 
     <properties>

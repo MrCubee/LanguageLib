@@ -1,8 +1,7 @@
 package fr.mrcubee.langlib;
 
-import fr.mrcubee.langlib.util.PluginFinder;
+import fr.mrcubee.finder.plugin.PluginFinder;
 import net.md_5.bungee.api.ChatColor;
-import org.bukkit.entity.Player;
 
 import java.io.File;
 import java.util.Map;
