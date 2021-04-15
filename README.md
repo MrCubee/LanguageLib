@@ -39,7 +39,7 @@ repositories {
 Dependency:
 ```groovy
 dependencies {
-    implementation 'fr.mrcubee.minecraft.library:languagelib:1.0'
+    compile 'fr.mrcubee.minecraft.library:languagelib:1.0'
 }
 ```
 ### Use in the plugin.
