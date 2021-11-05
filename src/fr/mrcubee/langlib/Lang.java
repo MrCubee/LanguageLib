@@ -80,7 +80,7 @@ public class Lang {
      * @return Returns true if the default language has been applied to the current plugin, or then returns false.
      */
     public static boolean setDefaultLang(String lang) {
-        Object plugin = PluginFinder.INSTANCE.findPlugin();
+        Object plugin = PluginFinder.INSTANCE.findPluginCaller();
         Logger logger = PluginFinder.INSTANCE.findLogger(plugin);
         PluginLang pluginLang;
         File dataFolder;
@@ -107,7 +107,7 @@ public class Lang {
      * @return The default language of the current plugin (see minecraft <a href="https://minecraft.gamepedia.com/Language">Locale Code</a>).
      */
     public static String getDefaultLang() {
-        Object plugin = PluginFinder.INSTANCE.findPlugin();
+        Object plugin = PluginFinder.INSTANCE.findPluginCaller();
         PluginLang pluginLang;
 
         if (plugin == null)
@@ -119,7 +119,7 @@ public class Lang {
     }
 
     public static void removeInstance() {
-        Object plugin = PluginFinder.INSTANCE.findPlugin();
+        Object plugin = PluginFinder.INSTANCE.findPluginCaller();
 
         if (plugin == null)
             return;
@@ -163,7 +163,7 @@ public class Lang {
      * @see String#format(String, Object...)
      */
     public static String getMessage(Object player, String messageId, String rescueMessage, boolean color, Object... objects) {
-        return getMessageFromId(PluginFinder.INSTANCE.findPlugin(), getPlayerLang(player), messageId, rescueMessage, color, objects);
+        return getMessageFromId(PluginFinder.INSTANCE.findPluginCaller(), getPlayerLang(player), messageId, rescueMessage, color, objects);
     }
 
     /** Retrieves the formatted message of the current plugin and the default language.
@@ -176,7 +176,7 @@ public class Lang {
      * @see String#format(String, Object...) 
      */
     public static String getMessage(String messageId, String rescueMessage, boolean color, Object... objects) {
-        return getMessageFromId(PluginFinder.INSTANCE.findPlugin(), null, messageId, rescueMessage, color, objects);
+        return getMessageFromId(PluginFinder.INSTANCE.findPluginCaller(), null, messageId, rescueMessage, color, objects);
     }
 
     /** This function unloads languages loaded by plugins that are no longer used.
