@@ -30,7 +30,7 @@
     <distributionManagement>
         <repository>
             <id>mrcubee-public</id>
-            <url>http://nexus.mrcubee.net/repository/minecraft/</url>
+            <url>https://nexus.mrcubee.net/repository/minecraft/</url>
             <uniqueVersion>false</uniqueVersion>
         </repository>
     </distributionManagement>
@@ -43,7 +43,7 @@
     <repositories>
         <repository>
             <id>mrcubee-public</id>
-            <url>http://nexus.mrcubee.net/repository/minecraft/</url>
+            <url>https://nexus.mrcubee.net/repository/minecraft/</url>
         </repository>
     </repositories>
 
@@ -57,8 +57,7 @@
         <dependency>
             <groupId>net.md5</groupId>
             <artifactId>bungeecord-api</artifactId>
-            <version>1.16-R0.4-SNAPSHOT</version>
-            <scope>provided</scope>
+            <version>1.18-R0.1-SNAPSHOT</version>
         </dependency>
         <dependency>
             <groupId>fr.mrcubee.minecraft.library</groupId>
@@ -94,29 +93,21 @@
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-shade-plugin</artifactId>
-                <version>3.2.4</version>
+                <artifactId>maven-assembly-plugin</artifactId>
+                <version>3.3.0</version>
                 <executions>
                     <execution>
                         <phase>package</phase>
                         <goals>
-                            <goal>shade</goal>
+                            <goal>single</goal>
                         </goals>
+                        <configuration>
+                            <descriptorRefs>
+                                <descriptorRef>jar-with-dependencies</descriptorRef>
+                            </descriptorRefs>
+                        </configuration>
                     </execution>
                 </executions>
-                <configuration>
-                    <createDependencyReducedPom>false</createDependencyReducedPom>
-                    <shadedArtifactAttached>false</shadedArtifactAttached>
-                    <finalName>${pom.artifactId}</finalName>
-                    <filters>
-                        <filter>
-                            <artifact>*:*</artifact>
-                            <excludes>
-                                <exclude>META-INF/</exclude>
-                            </excludes>
-                        </filter>
-                    </filters>
-                </configuration>
             </plugin>
         </plugins>
     </build>
