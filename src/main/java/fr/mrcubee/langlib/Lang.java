@@ -156,6 +156,19 @@ public class Lang {
      * @since 1.0
      * @param player The player language to retrieve.
      * @param messageId The unique identifier of the message to use to find the message format in the dictionary.
+     * @param color Applies the color format from '&' character.
+     * @param objects The elements required by the message format.
+     * @return The formatted message.
+     * @see String#format(String, Object...)
+     */
+    public static String getMessage(Object player, String messageId, boolean color, Object... objects) {
+        return getMessageFromId(PluginFinder.INSTANCE.findPluginCaller(), getPlayerLang(player), messageId, "&cLANG ERROR: " + messageId, color, objects);
+    }
+
+    /** Retrieves the formatted message of the current plugin and the player language.
+     * @since 1.0
+     * @param player The player language to retrieve.
+     * @param messageId The unique identifier of the message to use to find the message format in the dictionary.
      * @param rescueMessage Message format used if no dictionary contains the unique message identifier.
      * @param color Applies the color format from '&' character.
      * @param objects The elements required by the message format.
@@ -169,11 +182,23 @@ public class Lang {
     /** Retrieves the formatted message of the current plugin and the default language.
      * @since 1.0
      * @param messageId The unique identifier of the message to use to find the message format in the dictionary.
+     * @param color Applies the color format from '&' character.
+     * @param objects The elements required by the message format.
+     * @return The formatted message.
+     * @see String#format(String, Object...)
+     */
+    public static String getMessage(String messageId, boolean color, Object... objects) {
+        return getMessageFromId(PluginFinder.INSTANCE.findPluginCaller(), null, messageId, "&cLANG ERROR: " + messageId, color, objects);
+    }
+
+    /** Retrieves the formatted message of the current plugin and the default language.
+     * @since 1.0
+     * @param messageId The unique identifier of the message to use to find the message format in the dictionary.
      * @param rescueMessage Message format used if no dictionary contains the unique message identifier.
      * @param color Applies the color format from '&' character.
      * @param objects The elements required by the message format.
      * @return The formatted message.
-     * @see String#format(String, Object...) 
+     * @see String#format(String, Object...)
      */
     public static String getMessage(String messageId, String rescueMessage, boolean color, Object... objects) {
         return getMessageFromId(PluginFinder.INSTANCE.findPluginCaller(), null, messageId, rescueMessage, color, objects);
